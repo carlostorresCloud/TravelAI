@@ -1,0 +1,1248 @@
+{
+  "name": "Proyecto final coderhouse",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Agencia de viajes de coderhouse",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Correo",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Telefono",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Preferencias de viaje",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c52584bf-ed0d-492e-b943-dbdee2b7b172",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1376,
+        992
+      ],
+      "webhookId": "38ef253e-4cc0-4a2a-add0-20fab4c2bbd1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "b0b4d921-5c70-4497-89b4-cfa45828d40d",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -912,
+        688
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://api.aviationstack.com/v1/flights",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_key",
+              "value": "7c7e9e110b0001fca7cf4086f08ea649"
+            },
+            {
+              "name": "dep_iata",
+              "value": "={{ $json.origen }}"
+            },
+            {
+              "name": "arr_iata",
+              "value": "={{ $json.destino }}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "51007027-2d61-4710-9371-a9ecc22d32f8",
+      "name": "API DE VUELOS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -128,
+        464
+      ],
+      "typeVersionNote": "",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst parsedItems = items.map((item) => {\n  const outputString = item?.json?.output;\n  const jsonStart = outputString.indexOf(\"{\");\n  const jsonEnd = outputString.lastIndexOf(\"}\") + 1;\n  const jsonString = outputString.slice(jsonStart, jsonEnd);\n  const parsedJson = JSON.parse(jsonString);\n  return { origen: parsedJson?.origen, destino: parsedJson?.destino };\n});\nreturn parsedItems;\n"
+      },
+      "id": "daf01da0-1509-469c-90dd-f56070afd50a",
+      "name": "PARSEAR JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "content": "\nEl agente de IA buscara si el aeropuerto existe en airtable usando su herramienta  si no existe entonces debera tomar un flujo de error y notificar por slack",
+        "height": 224,
+        "width": 288
+      },
+      "id": "eed7f80c-754d-4788-bcc2-7c0c72a7d076",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "338fc7fc-146f-49ba-9ec6-2f934d6e9b3b",
+              "leftValue": "={{ $input.item.json.id }}",
+              "rightValue": false,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a581846e-eae4-4c6b-b35d-2ed31dde01b8",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -928,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appCPOqfBGyLWCYzB",
+          "mode": "list",
+          "cachedResultName": "Agencia de viajes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblLJbmL9kjtIHnMn",
+          "mode": "list",
+          "cachedResultName": "Clientes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB/tblLJbmL9kjtIHnMn"
+        },
+        "filterByFormula": "={Telefono} = '{{ $json.Telefono }}'",
+        "options": {}
+      },
+      "id": "73d9e764-6d05-4a7a-ab34-08d422ca4368",
+      "name": "Search records",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1152,
+        992
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "3ewwEJnEbvWKDWao",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appCPOqfBGyLWCYzB",
+          "mode": "list",
+          "cachedResultName": "Agencia de viajes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblLJbmL9kjtIHnMn",
+          "mode": "list",
+          "cachedResultName": "Clientes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB/tblLJbmL9kjtIHnMn"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ $('On form submission').item.json.Nombre }}",
+            "Email": "={{ $('On form submission').item.json.Correo }}",
+            "Telefono": "={{ $('On form submission').item.json.Telefono }}",
+            "Preferencias de viaje": "={{ $('On form submission').item.json[\"Preferencias de viaje\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Telefono",
+              "displayName": "Telefono",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Preferencias de viaje",
+              "displayName": "Preferencias de viaje",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [
+                {
+                  "name": "Prueba",
+                  "value": "Prueba"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b394b1b6-536d-4440-b68f-91be6608aeba",
+      "name": "Create a record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -704,
+        1088
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "3ewwEJnEbvWKDWao",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appCPOqfBGyLWCYzB",
+          "mode": "list",
+          "cachedResultName": "Agencia de viajes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblpY8IAP9YA70PGN",
+          "mode": "list",
+          "cachedResultName": "Aeropuertos",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB/tblpY8IAP9YA70PGN"
+        },
+        "filterByFormula": "={{ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "5c5aee92-8a0b-4ba3-819b-3290163c6ca5",
+      "name": "Buscar Aeropuertos",
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        -784,
+        688
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "3ewwEJnEbvWKDWao",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Si la api de vuelos falla hara un exponential backoff reintenando cada 5 segundos y aumentando en un factor de mas tiempo entre llamadas\n\nEn caso de error en la api se ira a slack para notificar con un mensaje",
+        "height": 224,
+        "width": 288
+      },
+      "id": "9808273a-6f92-4591-a811-964d993b4138",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "55467d61-81ec-425a-97f1-0af1e6027b36",
+              "leftValue": "={{ $json.origen }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8830316d-66bc-433b-b768-11da242dbaf7",
+              "leftValue": "={{ $json.destino }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e2b40d12-a67c-4098-8284-a615b7a62a17",
+      "name": "Validar que el json regrese diferente de null en origen y destino",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BCPLDRG74",
+          "mode": "list",
+          "cachedResultName": "error-handling"
+        },
+        "text": "=Error en la api de vuelos\n",
+        "otherOptions": {}
+      },
+      "id": "0de617f1-c8f3-4474-80e1-5a856956536f",
+      "name": "Notificar que la api no funciona",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        96,
+        560
+      ],
+      "webhookId": "73c6073c-0c7a-4acd-b9c2-d792e6ca5600",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "OleIgIdQku74Gyvn",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BCPLDRG74",
+          "mode": "list",
+          "cachedResultName": "error-handling"
+        },
+        "text": "=Error: No se encontró una ruta disponible para ese origen o destino en base al siguiente para la siguiente solicitud: {{ $('Validar cambio de estado').item.json.fields[\"Preferencias de viaje\"] }}  del usuario:{{ $('Validar cambio de estado').item.json.fields.Nombre }} ccon numero de telefono {{ $('Validar cambio de estado').item.json.fields.Telefono }}",
+        "otherOptions": {}
+      },
+      "id": "dc658cb6-9cc4-4018-a0e4-d31a6c75bbff",
+      "name": "Notificar que la ruta no es valida",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        -128,
+        656
+      ],
+      "webhookId": "73c6073c-0c7a-4acd-b9c2-d792e6ca5600",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "OleIgIdQku74Gyvn",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Una vez generado el itinerario se procede a enviarlo a slack como parte de su aprobacion de human in the loop para posteriormente enviar el correo al usuario, en caso de rechazar la solicitud, el nodo if se ira a airtable donde cambiara el estado a rechazado\n",
+        "height": 224,
+        "width": 288,
+        "color": "#DB0606"
+      },
+      "id": "da17dc1c-62a6-48b5-b113-d9a0291a8287",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        608,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BCPLDRG74",
+          "mode": "list",
+          "cachedResultName": "error-handling"
+        },
+        "text": "=Se intento registrar un usuario que ya existe en airtable con el numero de telefono: {{ $('On form submission').item.json.Telefono }}",
+        "otherOptions": {}
+      },
+      "id": "aff48382-e123-4d90-9652-fc2ef000c79c",
+      "name": "Usuario ya existe - error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        -704,
+        896
+      ],
+      "webhookId": "a0e4ae71-6cce-449a-9c77-a9d12f0a7a0c",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "OleIgIdQku74Gyvn",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "06307a2b-7dde-4e02-8739-a0b3f7656994",
+              "leftValue": "={{ $json.fields.Estado }}",
+              "rightValue": "Procesado por IA",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d6d978e3-872a-4354-a128-3a1f6c23de74",
+      "name": "Validar cambio de estado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1152,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableOAuth2Api",
+        "baseId": {
+          "__rl": true,
+          "value": "https://airtable.com/appCPOqfBGyLWCYzB/shrxo5Xdq5wdYyBYg",
+          "mode": "url"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "https://airtable.com/appCPOqfBGyLWCYzB/tblLJbmL9kjtIHnMn/viw25FCbzgajE1sIw?blocks=hide",
+          "mode": "url"
+        },
+        "triggerField": "Estado",
+        "additionalFields": {}
+      },
+      "id": "4fa57493-60e8-46a0-9094-65ffc179d110",
+      "name": "Airtable Trigger",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        560
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "3ewwEJnEbvWKDWao",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente de procesamiento de datos. Tu objetivo es interpretar intenciones de viaje y extraer información estructurada. \n\nSigue ESTRICTAMENTE esta secuencia de pasos en orden:\n\nPASO 1: IDENTIFICACIÓN Y BÚSQUEDA\nLee el siguiente mensaje del cliente: {{ $json.fields['Preferencias de viaje'] }}\nIdentifica los nombres de la ciudad de origen y la ciudad de destino.\nUtiliza tu herramienta de base de datos (Airtable) para buscar el nombre de esas ciudades en la columna Ciudad de la tabla de Aeropuertos sin importar si esta en mayusculas o minusculas y obtener sus respectivos códigos IATA en una columna llamada Codigo IATA. \n\nPASO 2: VALIDACIÓN\nEvalúa los resultados del Paso 1. Si la herramienta no encontró el código IATA para el origen, para el destino, o la tabla no devolvió resultados, prepárate para reportar un error. Si encontraste ambos códigos, avanza al paso 3.\n\nPASO 3: RESPUESTA FINAL (STRICT JSON)\nTu respuesta final debe ser ÚNICAMENTE un objeto JSON válido. No agregues saludos, explicaciones, ni bloques de código markdown (como ```json). Devuelve estrictamente esta estructura:\n{\n  \"origen\": \"código IATA aquí (o null si no se encontró en Airtable)\",\n  \"destino\": \"código IATA aquí (o null si no se encontró en Airtable)\",\n  \"telefono_procesado\": \"{{ $json.fields.Telefono }}\",\n  \"error\": \"Si no encontraste la ruta, escribe exactamente 'No se encontró una ruta disponible para ese origen o destino'. Si todo está bien, devuelve null.\"\n}",
+        "options": {}
+      },
+      "id": "240908a9-578c-49f6-92e3-82d98fa5e66d",
+      "name": "Buscador de aeropuertos",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -928,
+        464
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un agente de viajes, quiero que uses tu herramienta de busqueda para traerme un itinerario con este origen y destino y recomendarme 5 actividades turisticas en destino asi como incluir la informacion de los vuelos de los siguientes datos: origen: {{ $json.departure_iata }}  destino: {{ $json.arrival_iata }} en aerolinea: {{ $json.codeshared_airline }}",
+        "options": {}
+      },
+      "id": "bef79290-d78b-49ee-ac4e-55a1613b7b3c",
+      "name": "Generador de planes de viaje",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        368
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "e6460274-59b5-48f9-bf48-3dd96f317e34",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        592
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BEUPY5ZDY",
+          "mode": "list",
+          "cachedResultName": "aprobacion-de-posts"
+        },
+        "message": "=Revisa el siguiente itinierario antes de aprobarlo\n {{ $json.output }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "id": "f5030250-a0f0-4cbd-9b2b-e1269f4a7541",
+      "name": "Humano revisa y aprueba plan",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        672,
+        368
+      ],
+      "webhookId": "c3b2050f-c996-49bc-980d-89aff78060ca",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "OleIgIdQku74Gyvn",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ing.torres.carlos@gmail.com",
+        "subject": "prueba",
+        "message": "=<h3>Itinerario de vuelos {{ $('PARSEAR JSON').item.json.origen }} a {{ $('PARSEAR JSON').item.json.destino }}</h3>\n\n\n{{ $json.html }}",
+        "options": {}
+      },
+      "id": "be1224fb-ffce-4463-8d06-04e139de7efd",
+      "name": "Enviar itinerario al correo del usuario",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        272
+      ],
+      "webhookId": "ad8fe179-d2c9-465d-9650-150552ff43fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LTLM4U7xui49oYpR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// El nodo API DE VUELOS devuelve un item cuyo JSON contiene la propiedad \"data\" (array de vuelos).\nconst flightsArray = $input.first().json.data || [];\n\n// Extraer solo los campos necesarios de cada vuelo\nconst extractedData = flightsArray.map(flight => {\n  return {\n    departure_iata: flight.departure?.iata || null,\n    arrival_iata: flight.arrival?.iata || null,\n    codeshared_airline: flight.flight?.codeshared || null,\n    codeshared_flight_iata: flight.flight?.iata || null\n  };\n});\n\nreturn extractedData;"
+      },
+      "id": "9dbe8a9d-a655-4bf5-a7e6-76b7962251e3",
+      "name": "Extraer aerolineas y vuelos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>Tu Plan de Viaje a Medida</title>\n  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n  <link href=\"https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap\" rel=\"stylesheet\">\n</head>\n<body>\n\n  <main class=\"travel-wrapper\">\n    <div class=\"agency-badge\">Tu Plan de Viaje a Medida</div>\n    \n    <div class=\"itinerary-container\">\n      {{ $json.html }}\n    </div>\n  </main>\n\n</body>\n</html>\n\n<style>\n* {\n  box-sizing: border-box;\n  margin: 0;\n  padding: 0;\n}\n\nbody {\n  background-color: #fcfbfa;\n  font-family: 'Plus Jakarta Sans', sans-serif;\n  color: #2c3e50;\n  line-height: 1.7;\n  padding: 40px 20px;\n}\n\n.travel-wrapper {\n  max-width: 800px;\n  margin: 0 auto;\n  background-color: #ffffff;\n  padding: 48px 56px;\n  border-radius: 16px;\n  box-shadow: 0 4px 20px rgba(184, 172, 160, 0.15);\n  border: 1px solid #f1eeea;\n}\n\n.agency-badge {\n  text-align: center;\n  font-size: 12px;\n  letter-spacing: 0.2em;\n  text-transform: uppercase;\n  color: #c87d55;\n  font-weight: 600;\n  margin-bottom: 24px;\n}\n\n.itinerary-container {\n  text-align: left;\n}\n\n.itinerary-container h1 {\n  font-family: 'Playfair Display', serif;\n  color: #1a2a3a;\n  font-size: 36px;\n  font-weight: 700;\n  line-height: 1.3;\n  text-align: center;\n  margin-bottom: 32px;\n}\n\n.itinerary-container h2 {\n  font-family: 'Playfair Display', serif;\n  color: #c87d55;\n  font-size: 22px;\n  font-weight: 600;\n  margin-top: 36px;\n  margin-bottom: 16px;\n  border-bottom: 1px solid #f5ede6;\n  padding-bottom: 8px;\n}\n\n.itinerary-container h3 {\n  font-size: 16px;\n  font-weight: 600;\n  color: #1a2a3a;\n  margin-top: 20px;\n  margin-bottom: 8px;\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n.itinerary-container p {\n  font-size: 15px;\n  color: #4a5568;\n  margin-bottom: 16px;\n}\n\n.itinerary-container ul, \n.itinerary-container ol {\n  margin-bottom: 24px;\n  padding-left: 24px;\n}\n\n.itinerary-container li {\n  font-size: 15px;\n  color: #4a5568;\n  margin-bottom: 8px;\n}\n\n.itinerary-container strong {\n  color: #1a2a3a;\n  font-weight: 600;\n}\n\n@media (max-width: 600px) {\n  body {\n    padding: 16px 8px;\n  }\n  .travel-wrapper {\n    padding: 32px 24px;\n  }\n  .itinerary-container h1 {\n    font-size: 28px;\n  }\n  .itinerary-container h2 {\n    font-size: 20px;\n  }\n}\n</style>"
+      },
+      "id": "ce5c53db-85d5-43ab-ba88-677c8f66b98c",
+      "name": "Construir correo en formato html",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "q": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "locationSettings": {},
+        "languageSettings": {
+          "lr": [
+            "lang_es"
+          ]
+        },
+        "searchOptions": {},
+        "timeFilters": {
+          "time_period": "last_month"
+        },
+        "pagination": {
+          "num": "5"
+        },
+        "advancedOptions": {},
+        "requestOptions": {}
+      },
+      "id": "24a167b9-a681-45fc-86d6-2ecf1bc868d5",
+      "name": "buscar en google",
+      "type": "@searchapi/n8n-nodes-searchapi.searchApiTool",
+      "typeVersion": 1,
+      "position": [
+        464,
+        592
+      ],
+      "credentials": {
+        "searchApi": {
+          "id": "7HvJFrtqkAE4PDyf",
+          "name": "SearchApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "\nEl trigger se activa en respuesta a un cambio de estado en airtable de pendiente a procesado por IA",
+        "height": 224,
+        "width": 288,
+        "color": "#E01010"
+      },
+      "id": "d0177b08-3679-4e1d-9dad-16a67603d5bb",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appCPOqfBGyLWCYzB",
+          "mode": "list",
+          "cachedResultName": "Agencia de viajes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblLJbmL9kjtIHnMn",
+          "mode": "list",
+          "cachedResultName": "Clientes",
+          "cachedResultUrl": "https://airtable.com/appCPOqfBGyLWCYzB/tblLJbmL9kjtIHnMn"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Airtable Trigger').item.json.id }}",
+            "Estado": "Rechazado"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Telefono",
+              "displayName": "Telefono",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Preferencias de viaje",
+              "displayName": "Preferencias de viaje",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Aprobado por Humano",
+                  "value": "Aprobado por Humano"
+                },
+                {
+                  "name": "Rechazado",
+                  "value": "Rechazado"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Solicitudes",
+              "displayName": "Solicitudes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "daf24852-253d-4df1-ab7f-8a1033efae79",
+      "name": "Cambiar a estado rechazado",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        464
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "3ewwEJnEbvWKDWao",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b3c2d18c-d4d3-4e3e-ab31-e5870540d207",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "946273d6-20f6-4718-b06e-c1c1181407ee",
+      "name": "validar si se aprobo o rechazo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convierte el itinerario en markdown (generado por la IA) a HTML.\n// La entrada ya es texto markdown plano, NO un string JSON.\nfunction markdownToHtml(text) {\n  if (!text) return '';\n  const lines = String(text).split('\\n');\n  let html = '';\n  let inList = false;\n\n  const closeList = () => {\n    if (inList) { html += '</ul>'; inList = false; }\n  };\n\n  for (const rawLine of lines) {\n    let line = rawLine.trim();\n\n    // Negritas: **texto** -> <strong>texto</strong>\n    line = line.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');\n    // Enlaces: [texto](url) -> <a href=\"url\">texto</a>\n    line = line.replace(/\\[(.*?)\\]\\((.*?)\\)/g, '<a href=\"$2\">$1</a>');\n\n    if (line === '') { closeList(); continue; }\n\n    if (line.startsWith('### ')) {\n      closeList();\n      html += '<h3>' + line.slice(4) + '</h3>';\n    } else if (line.startsWith('## ')) {\n      closeList();\n      html += '<h2>' + line.slice(3) + '</h2>';\n    } else if (line.startsWith('# ')) {\n      closeList();\n      html += '<h1>' + line.slice(2) + '</h1>';\n    } else if (/^(\\d+\\.|[-*])\\s+/.test(line)) {\n      if (!inList) { html += '<ul>'; inList = true; }\n      html += '<li>' + line.replace(/^(\\d+\\.|[-*])\\s+/, '') + '</li>';\n    } else {\n      closeList();\n      html += '<p>' + line + '</p>';\n    }\n  }\n  closeList();\n  return html;\n}\n\nconst inputString = $('Generador de planes de viaje').first().json.output;\nconst html = markdownToHtml(inputString);\n\nreturn [{ json: { html } }];"
+      },
+      "id": "cf4735d1-8dea-4c4f-baad-5fc2ed889079",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "\nEste es  el flujo que registra nuevos usuarios en airtable mediante el trigger de on form submission el cual tambien valida si el usario ya existe en cuyo caso envia un mensaje de error",
+        "height": 224,
+        "width": 288,
+        "color": 6
+      },
+      "id": "ba520c35-2878-40dd-b393-2721e04d833c",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1776,
+        928
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Buscador de aeropuertos",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API DE VUELOS": {
+      "main": [
+        [
+          {
+            "node": "Extraer aerolineas y vuelos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar que la api no funciona",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PARSEAR JSON": {
+      "main": [
+        [
+          {
+            "node": "Validar que el json regrese diferente de null en origen y destino",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Usuario ya existe - error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Aeropuertos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Buscador de aeropuertos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar que el json regrese diferente de null en origen y destino": {
+      "main": [
+        [
+          {
+            "node": "API DE VUELOS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar que la ruta no es valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar cambio de estado": {
+      "main": [
+        [
+          {
+            "node": "Buscador de aeropuertos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validar cambio de estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscador de aeropuertos": {
+      "main": [
+        [
+          {
+            "node": "PARSEAR JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generador de planes de viaje",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generador de planes de viaje": {
+      "main": [
+        [
+          {
+            "node": "Humano revisa y aprueba plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Humano revisa y aprueba plan": {
+      "main": [
+        [
+          {
+            "node": "validar si se aprobo o rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer aerolineas y vuelos": {
+      "main": [
+        [
+          {
+            "node": "Generador de planes de viaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir correo en formato html": {
+      "main": [
+        [
+          {
+            "node": "Enviar itinerario al correo del usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar en google": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generador de planes de viaje",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validar si se aprobo o rechazo": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cambiar a estado rechazado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Construir correo en formato html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "63d4baaa-fa9e-4671-8863-eda906d6d506",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eeaf510a94753a913504d863dd667353543dda9a5db26fe67f0c9e01e3a5cd20"
+  },
+  "nodeGroups": [],
+  "id": "bd17951Q1YNIwc0l",
+  "tags": []
+}
