@@ -68,13 +68,11 @@
     {
       "parameters": {
         "url": "http://api.aviationstack.com/v1/flights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            {
-              "name": "access_key",
-              "value": "7c7e9e110b0001fca7cf4086f08ea649"
-            },
             {
               "name": "dep_iata",
               "value": "={{ $json.origen }}"
@@ -101,6 +99,12 @@
       ],
       "typeVersionNote": "",
       "retryOnFail": true,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "G7d46oZJyvXvRtP4",
+          "name": "Query Auth account"
+        }
+      },
       "onError": "continueErrorOutput"
     },
     {
@@ -428,7 +432,7 @@
           "mode": "list",
           "cachedResultName": "error-handling"
         },
-        "text": "=Error en la api de vuelos\n",
+        "text": "=Error en la api de vuelos\n{{ $json.error.message }}",
         "otherOptions": {}
       },
       "id": "0de617f1-c8f3-4474-80e1-5a856956536f",
@@ -746,10 +750,10 @@
         },
         "searchOptions": {},
         "timeFilters": {
-          "time_period": "last_month"
+          "time_period": "last_day"
         },
         "pagination": {
-          "num": "5"
+          "num": "1"
         },
         "advancedOptions": {},
         "requestOptions": {}
@@ -1237,7 +1241,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "63d4baaa-fa9e-4671-8863-eda906d6d506",
+  "versionId": "ce10ae7b-fda7-4e3b-8144-2e7bec2fbd7c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "eeaf510a94753a913504d863dd667353543dda9a5db26fe67f0c9e01e3a5cd20"
