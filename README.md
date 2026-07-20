@@ -5,6 +5,8 @@
 
 Motor de sugerencias de planes de viaje a medida, impulsado por inteligencia artificial en función de las preferencias del viajero. El sistema automatiza el ciclo completo: desde el registro del cliente hasta la generación y validación humana del itinerario final.
 
+Demostracion en Loom: https://www.loom.com/share/663a4257940d4c58852c7f4ce8705e80
+
 ---
 
 ## 📋 Descripción general
