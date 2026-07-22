@@ -1,149 +1,110 @@
 # ✈️ Travel AI
 
-**Proyecto Final — Curso de AI Automation, Coderhouse**
-**Alumno:** Carlos Torres Sanchez
 
-Motor de sugerencias de planes de viaje a medida, impulsado por inteligencia artificial en función de las preferencias del viajero. El sistema automatiza el ciclo completo: desde el registro del cliente hasta la generación y validación humana del itinerario final.
 
-Demostracion en Loom: https://www.loom.com/share/663a4257940d4c58852c7f4ce8705e80
+An AI-powered engine for generating custom travel plan suggestions based on traveler preferences. The system automates the full cycle: from customer registration to the generation and human validation of the final itinerary.
 
----
-
-## 📋 Descripción general
-
-Travel AI integra dos procesos principales:
-
-1. **Registro de perfiles de usuario** en Airtable, a partir de los datos que ingresa un nuevo viajero.
-2. **Automatización de generación de propuestas**, disparada al detectar un cambio de estatus de `Pendiente` a `Procesado por IA`. Este flujo despliega dos agentes inteligentes:
-   - **Agente 1:** valida los códigos IATA de los aeropuertos contra la base de datos en Airtable.
-   - **Agente 2:** realiza búsquedas externas en Google (y consulta la API de vuelos) para construir la propuesta de viaje definitiva.
-
-El resultado pasa por un esquema de **Human in the loop**: se valida en Slack antes de enviarse al cliente por Gmail.
+Loom Demo: https://www.loom.com/share/663a4257940d4c58852c7f4ce8705e80
 
 ---
 
-## 🏗️ Arquitectura
+## 📋 Overview
 
-| Componente | Tecnología | Función |
+Travel AI integrates two main processes:
+
+1. **User profile registration** in Airtable, based on data entered by a new traveler.
+2. **Proposal generation automation**, triggered when a status change is detected from `Pending` to `Processed by AI`. This flow deploys two intelligent agents:
+   - **Agent 1:** validates airport IATA codes against the Airtable database.
+   - **Agent 2:** performs external Google searches (and queries the flights API) to build the final travel proposal.
+
+The result goes through a **Human in the loop** scheme: it is validated in Slack before being sent to the client via Gmail.
+
+---
+
+## 🏗️ Architecture Layers
+
+| Component | Technology | Function |
 |---|---|---|
-| **Orquestador** | n8n | Administra los flujos de alta de perfiles y activa la creación de propuestas mediante triggers vinculados a la base de datos. |
-| **Cerebro (DB)** | Airtable | Almacena el registro de viajeros y las tablas de aeropuertos que consultan los agentes de IA. |
-| **Procesamiento (IA)** | OpenAI (GPT-4o-mini / GPT-5) | Modelos que operan como agentes duales: uno valida códigos IATA, el otro obtiene datos actualizados de destinos para sugerir planes de viaje. |
-| **Voz (Salida)** | Gmail y Slack | Esquema participativo: se valida el resultado en Slack antes de enviarlo al cliente vía Gmail. |
-
-### Diagramas de flujo(incluidos en el resumen ejecutivo)
-
-- **Flujo de creación de usuarios:** entrada de datos → orquestación en n8n → almacenamiento en Airtable.
-- **Flujo principal:** trigger de Airtable → agentes de IA (validación de aeropuertos + búsqueda y armado de itinerario).
-- **Proceso Human in the loop:** validación en Slack → envío al cliente vía Gmail.
+| **Orchestrator** | n8n | Manages the profile creation flows and triggers proposal generation via triggers linked to the database. |
+| **Data** | Airtable | Stores the traveler records and the airport tables queried by the AI agents. |
+| **LLMs** | OpenAI (GPT-4o-mini / GPT-5) | Models operating as dual agents: one validates IATA codes, the other retrieves up-to-date destination data to suggest travel plans. |
+| **Output** | Gmail and Slack | Result is validated via HITL in Slack before being sent to the client via Gmail. |
 
 
----
 
-## 🗄️ Estructura de datos en Airtable
+## 🗄️ Airtable data structure
 
-### Tabla 1: Clientes
-Registra a las personas interesadas en viajar.
+### Table 1: Customers
+Records people interested in traveling.
 
-| Campo | Tipo |
+| Field | Type |
 |---|---|
-| Nombre *(primario)* | Identificador del cliente |
-| Email | Texto de línea única |
-| Teléfono | Texto de línea única |
-| Preferencias de viaje | Texto largo |
-| Estado | Selector único: `Pendiente` → `Procesado por IA` → `Aprobado por Humano` / `Rechazado` |
-| Solicitudes | Registro vinculado a la tabla *Solicitudes* |
+| Name *(primary)* | Customer identifier |
+| Email | Single line text |
+| Phone | Single line text |
+| Travel preferences | Long text |
+| Status | Single select: `Pending` → `Processed by AI` → `Approved by Human` / `Rejected` |
+| Requests | Linked record to the *Requests* table |
 
-### Tabla 2: Solicitudes
-Convierte la intención del cliente en una petición de viaje estructurada.
+### Table 2: Requests
+Converts the customer's intent into a structured travel request.
 
-| Campo | Tipo |
+| Field | Type |
 |---|---|
-| ID Solicitud *(primario)* | Numérico |
-| Origen | Texto de línea única |
-| Destino | Texto de línea única |
-| Fechas | Texto de línea única |
-| Itinerario generado | Texto largo (resultado final) |
-| Clientes | Registro vinculado a la tabla *Clientes* |
-| Preferencias de viaje *(from Clientes)* | Lookup automático desde el cliente vinculado |
+| Request ID *(primary)* | Numeric |
+| Origin | Single line text |
+| Destination | Single line text |
+| Dates | Single line text |
+| Generated itinerary | Long text (final result) |
+| Customers | Linked record to the *Customers* table |
+| Travel preferences *(from Customers)* | Automatic lookup from the linked customer |
 
-### Tabla 3: Aeropuertos
-Catálogo de referencia (no transaccional), usado por el primer agente de IA para validar el aeropuerto antes de continuar el flujo.
+### Table 3: Airports
+Reference catalog (non-transactional), used by the first AI agent to validate the airport before continuing the flow.
 
-| Campo |
+| Field |
 |---|
-| Nombre del Aeropuerto *(primario)* |
-| Código IATA |
-| Ciudad |
-| País |
+| Airport name *(primary)* |
+| IATA code |
+| City |
+| Country |
 
-🔗 **Dashboard ejecutivo (Airtable):** [Ver base](https://airtable.com/appCPOqfBGyLWCYzB/shralv6Ies1xcHOTm)
-
----
-
-## 🔒 Seguridad y resiliencia del flujo
-
-### Gobernanza de datos
-- **Alcance de datos:** solo se solicitan nombre, correo, teléfono y una breve descripción de los requisitos de viaje. No se recolecta información sensible (tarjetas, contraseñas, etc.).
-- **Procesamiento y retención:** n8n transforma los datos antes de enviarlos a APIs de terceros (OpenAI), adaptándolos a lo solicitado por los prompts del sistema.
-- **Segmentación en Airtable:** la base "Agencia de Viajes" está segmentada en tablas de Clientes, Solicitudes y Aeropuertos. Los agentes de IA solo acceden a los campos necesarios, minimizando la superficie de exposición ante una posible vulneración de credenciales.
-
-### Rutas de contingencia (Error Handlers)
-- Se configuraron nodos **Error Trigger** en las etapas críticas del flujo (llamadas a la API de OpenAI y consultas de búsqueda externa).
-- Ante cualquier fallo (timeout, error de formato, indisponibilidad del servicio), el flujo no se detiene abruptamente: se envía una notificación automática al canal de Slack **`error-handling`**.
+🔗 **Executive dashboard (Airtable):** [View base](https://airtable.com/appCPOqfBGyLWCYzB/shralv6Ies1xcHOTm)
 
 ---
 
-## 🤖 Optimización de modelos y recursos
+## 🔒 Flow security and resilience
 
-| Modelo / Método | Tarea asignada | Justificación | Impacto en costos |
+### Data governance
+- **Data scope:** only name, email, phone, and a brief description of travel requirements are requested. No sensitive information is collected (credit cards, passwords, etc.).
+- **Processing and retention:** n8n transforms the data before sending it to third-party APIs (OpenAI), adapting it to what is requested by the system prompts.
+- **Segmentation in Airtable:** the "Travel Agency" base is segmented into Customers, Requests, and Airports tables. The AI agents only access the necessary fields, minimizing the exposure surface in the event of a credential breach.
+
+### Error Handling
+- **Error Trigger** nodes were configured at the critical stages of the flow (OpenAI API calls and external search queries).
+- In the event of any failure (timeout, format error, service unavailability), the flow does not stop abruptly: an automatic notification is sent to the Slack channel **`error-handling`**.
+
+---
+
+## 🤖 Model and resource optimization
+
+| Model / Method | Assigned task | Justification | Cost impact |
 |---|---|---|---|
-| **GPT-5** | Agente de creación de planes de viaje | Se usa junto con la búsqueda de Google para diseñar el itinerario, integrando información de vuelos. Su capacidad de razonamiento autónomo lo hace idóneo para tareas complejas (buscar y analizar información). | Más costoso, pero justificado por la complejidad de la tarea. |
-| **GPT-4o-mini** | Validación IATA y uso de la herramienta de Airtable | Modelo más simple, ideal para tareas básicas como resumir texto o extraer datos. | ~90% más económico que la serie GPT-5 (US $0.10 por millón de tokens vs. hasta US $5 por millón). |
-| **API de Aviation Stack** | Extraer aerolíneas, números de vuelo y validar rutas origen-destino | Necesaria para consultar información real de vuelos y enviarla al agente generador de planes. | Gratuita en su etapa de prueba (limitada a 100 solicitudes). |
+| **GPT-5** | Travel plan creation agent | Used together with Google search to design the itinerary, integrating flight information. Its autonomous reasoning capability makes it ideal for complex tasks (searching and analyzing information). | More expensive, but justified by the complexity of the task. |
+| **GPT-4o-mini** | IATA validation and Airtable tool usage | A simpler model, ideal for basic tasks such as summarizing text or extracting data. | ~90% cheaper than the GPT-5 series (US $0.10 per million tokens vs. up to US $5 per million). |
+| **Aviation Stack API** | Extracting airlines, flight numbers, and validating origin-destination routes | Needed to query real flight information and send it to the plan-generating agent. | Free in its trial stage (limited to 100 requests). |
 
 ---
 
-## 🚀 Flujo resumido end-to-end
+## 🛠️ Tech stack
 
-```
-Viajero completa formulario
-        │
-        ▼
-   n8n (orquestador)
-        │
-        ▼
-  Airtable → Tabla Clientes (Estado: Pendiente)
-        │
-        ▼
-Cambio de estado → "Procesado por IA" (trigger)
-        │
-        ├─▶ Agente 1 (GPT-4o-mini): valida código IATA en Airtable
-        │
-        └─▶ Agente 2 (GPT-5): búsqueda en Google + API de vuelos
-                    │
-                    ▼
-        Itinerario generado → Tabla Solicitudes
-                    │
-                    ▼
-        Validación humana en Slack (Human in the loop)
-                    │
-                    ▼
-        Envío del itinerario final al cliente vía Gmail
-```
+- [n8n](https://n8n.io/) — Workflow orchestration
+- [Airtable](https://airtable.com/) — Database / CRM
+- [OpenAI API](https://platform.openai.com/) — GPT-4o-mini and GPT-5 models
+- [Aviation Stack API](https://aviationstack.com/) — Flight data
+- Slack and Gmail — Human validation and customer notification
 
 ---
 
-## 🛠️ Stack tecnológico
 
-- [n8n](https://n8n.io/) — Orquestación de flujos de trabajo
-- [Airtable](https://airtable.com/) — Base de datos / CRM
-- [OpenAI API](https://platform.openai.com/) — Modelos GPT-4o-mini y GPT-5
-- [Aviation Stack API](https://aviationstack.com/) — Datos de vuelos
-- Slack y Gmail — Validación humana y notificación al cliente
 
----
-
-## 📄 Licencia
-
-Proyecto desarrollado con fines educativos como entrega final del curso de AI Automation en Coderhouse.
